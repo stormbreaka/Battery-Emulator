@@ -1,7 +1,6 @@
 #ifndef BATTERIES_H
 #define BATTERIES_H
 #include "../../USER_SETTINGS.h"
-#include "Shunt.h"
 
 class Battery;
 
@@ -19,8 +18,10 @@ void setup_can_shunt();
 #include "BOLT-AMPERA-BATTERY.h"
 #include "BYD-ATTO-3-BATTERY.h"
 #include "CELLPOWER-BMS.h"
+
 #include "CHADEMO-BATTERY.h"
 #include "CHADEMO-SHUNTS.h"
+
 #include "CMFA-EV-BATTERY.h"
 #include "DALY-BMS.h"
 #include "ECMP-BATTERY.h"
