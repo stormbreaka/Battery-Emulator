@@ -10,14 +10,6 @@
 #include "src/datalayer/datalayer.h"
 #include "src/devboard/safety/safety.h"
 #include "src/devboard/sdcard/sdcard.h"
-#include "src/devboard/utils/logging.h"
-
-struct CanReceiverRegistration {
-  CanReceiver* receiver;
-  CAN_Speed speed;
-};
-
-static std::multimap<CAN_Interface, CanReceiverRegistration> can_receivers;
 
 // Parameters
 CAN_device_t CAN_cfg;              // CAN Config
@@ -55,36 +47,41 @@ ACAN2517FDSettings* settings2517;
 
 // Initialization functions
 
-bool native_can_initialized = false;
+void init_CAN() {
+// CAN pins
+#ifdef CAN_SE_PIN
+  pinMode(CAN_SE_PIN, OUTPUT);
+  digitalWrite(CAN_SE_PIN, LOW);
+#endif  // CAN_SE_PIN
+  CAN_cfg.speed = CAN_SPEED_500KBPS;
+#ifdef NATIVECAN_250KBPS  // Some component is requesting lower CAN speed
+  CAN_cfg.speed = CAN_SPEED_250KBPS;
+#endif  // NATIVECAN_250KBPS
+  CAN_cfg.tx_pin_id = CAN_TX_PIN;
+  CAN_cfg.rx_pin_id = CAN_RX_PIN;
+  CAN_cfg.rx_queue = xQueueCreate(rx_queue_size, sizeof(CAN_frame_t));
+  // Init CAN Module
+  ESP32Can.CANInit();
 
-bool init_CAN() {
-
-  auto nativeIt = can_receivers.find(CAN_NATIVE);
-  if (nativeIt != can_receivers.end()) {
-    auto se_pin = esp32hal->CAN_SE_PIN();
-    auto tx_pin = esp32hal->CAN_TX_PIN();
-    auto rx_pin = esp32hal->CAN_RX_PIN();
-
-    if (se_pin != GPIO_NUM_NC) {
-      if (!esp32hal->alloc_pins("CAN", se_pin)) {
-        return false;
-      }
-      pinMode(se_pin, OUTPUT);
-      digitalWrite(se_pin, LOW);
-    }
-
-    CAN_cfg.speed = (CAN_speed_t)nativeIt->second.speed;
-
-    if (!esp32hal->alloc_pins("CAN", tx_pin, rx_pin)) {
-      return false;
-    }
-
-    CAN_cfg.tx_pin_id = tx_pin;
-    CAN_cfg.rx_pin_id = rx_pin;
-    CAN_cfg.rx_queue = xQueueCreate(rx_queue_size, sizeof(CAN_frame_t));
-    // Init CAN Module
-    ESP32Can.CANInit();
-    native_can_initialized = true;
+#ifdef CAN_ADDON
+#ifdef DEBUG_LOG
+  logging.println("Dual CAN Bus (ESP32+MCP2515) selected");
+#endif  // DEBUG_LOG
+  gBuffer.initWithSize(25);
+  SPI2515.begin(MCP2515_SCK, MCP2515_MISO, MCP2515_MOSI);
+  ACAN2515Settings settings2515(QUARTZ_FREQUENCY, 500UL * 1000UL);  // CAN bit rate 500 kb/s
+  settings2515.mRequestedMode = ACAN2515Settings::NormalMode;
+  const uint16_t errorCode2515 = can.begin(settings2515, [] { can.isr(); });
+  if (errorCode2515 == 0) {
+#ifdef DEBUG_LOG
+    logging.println("Can ok");
+#endif  // DEBUG_LOG
+  } else {
+#ifdef DEBUG_LOG
+    logging.print("Error Can: 0x");
+    logging.println(errorCode2515, HEX);
+#endif  // DEBUG_LOG
+    set_event(EVENT_CANMCP2515_INIT_FAILURE, (uint8_t)errorCode2515);
   }
 
   auto addonIt = can_receivers.find(CAN_ADDON_MCP2515);
@@ -205,7 +202,6 @@ void transmit_can_frame_to_interface(CAN_frame* tx_frame, int interface) {
 
   switch (interface) {
     case CAN_NATIVE:
-
       CAN_frame_t frame;
       frame.MsgID = tx_frame->ID;
       frame.FIR.B.FF = tx_frame->ext_ID ? CAN_frame_ext : CAN_frame_std;
@@ -355,6 +351,12 @@ void print_can_frame(CAN_frame frame, frameDirection msgDir) {
   }
 }
 
+static std::multimap<CAN_Interface, CanReceiver*> can_receivers;
+
+void register_can_receiver(CanReceiver* receiver, CAN_Interface interface) {
+  can_receivers.insert({interface, receiver});
+}
+
 void map_can_frame_to_variable(CAN_frame* rx_frame, CAN_Interface interface) {
   if (interface !=
       CANFD_NATIVE) {  //Avoid printing twice due to receive_frame_canfd_addon sending to both FD interfaces
@@ -375,7 +377,7 @@ void map_can_frame_to_variable(CAN_frame* rx_frame, CAN_Interface interface) {
 
   for (auto it = receivers.first; it != receivers.second; ++it) {
     auto& receiver = it->second;
-    receiver.receiver->receive_can_frame(rx_frame);
+    receiver->receive_can_frame(rx_frame);
   }
 }
 

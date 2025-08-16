@@ -139,12 +139,6 @@ const char* name_for_battery_type(BatteryType type) {
   }
 }
 
-#ifdef LFP_CHEMISTRY
-const battery_chemistry_enum battery_chemistry_default = battery_chemistry_enum::LFP;
-#else
-const battery_chemistry_enum battery_chemistry_default = battery_chemistry_enum::NMC;
-#endif
-
 battery_chemistry_enum user_selected_battery_chemistry = battery_chemistry_default;
 
 #ifdef COMMON_IMAGE

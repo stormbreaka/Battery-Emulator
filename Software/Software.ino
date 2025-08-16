@@ -85,13 +85,13 @@ void setup() {
                           &logging_loop_task, esp32hal->WIFICORE());
 #endif
 
-  if (!init_contactors()) {
-    return;
-  }
+  init_CAN();
 
-  if (!init_precharge_control()) {
-    return;
-  }
+  init_contactors();
+
+#ifdef PRECHARGE_CONTROL
+  init_precharge_control();
+#endif  // PRECHARGE_CONTROL
 
   setup_charger();
 
@@ -99,21 +99,12 @@ void setup() {
     return;
   }
   setup_battery();
-  setup_can_shunt();
-
-  // Init CAN only after any CAN receivers have had a chance to register.
-  if (!init_CAN()) {
-    return;
-  }
-
-  if (!init_rs485()) {
-    return;
-  }
 
   if (!init_equipment_stop_button()) {
     return;
   }
 
+  setup_can_shunt();
   // BOOT button at runtime is used as an input for various things
   pinMode(0, INPUT_PULLUP);
 
@@ -149,8 +140,6 @@ void setup() {
     set_event(EVENT_PERIODIC_BMS_RESET_AT_INIT_SUCCESS, 0);
   }
 #endif
-
-  DEBUG_PRINTF("setup() complete\n");
 }
 
 // Loop empty, all functionality runs in tasks
@@ -217,7 +206,6 @@ static std::list<Transmitter*> transmitters;
 
 void register_transmitter(Transmitter* transmitter) {
   transmitters.push_back(transmitter);
-  DEBUG_PRINTF("transmitter registered, total: %d\n", transmitters.size());
 }
 
 void core_loop(void*) {
