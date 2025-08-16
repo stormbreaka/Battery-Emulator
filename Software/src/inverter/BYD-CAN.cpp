@@ -1,6 +1,9 @@
 #include "BYD-CAN.h"
 #include "../communication/can/comm_can.h"
 #include "../datalayer/datalayer.h"
+#include "../datalayer/datalayer_extended.h"
+//#include "../include.h"
+
 
 /* Do not change code below unless you are sure what you are doing */
 
@@ -15,8 +18,14 @@ void BydCanInverter::
   if (datalayer.battery.status.voltage_dV > 10) {  // Only update value when we have voltage available to avoid div0
     remaining_capacity_ah =
         ((datalayer.battery.status.reported_remaining_capacity_Wh / datalayer.battery.status.voltage_dV) * 100);
+    #ifdef BATRIUM_BMS
+    // If we have a Batrium BMS, use the nominal capacity from there
+    fully_charged_capacity_ah = datalayer_extended.batriumBMS.nominal_capacity_ah;
+    #else
+    // If we do not have a Batrium BMS, use the reported total capacity from the battery
     fully_charged_capacity_ah =
         ((datalayer.battery.info.total_capacity_Wh / datalayer.battery.status.voltage_dV) * 100);
+    #endif
   }
 
   //Map values to CAN messages
@@ -50,8 +59,8 @@ void BydCanInverter::
   // Fix for avoiding offgrid Deye inverters to underdischarge batteries
   if (datalayer.battery.status.max_charge_current_dA == 0) {
     //Force to 100.00% incase battery no longer wants to charge
-    BYD_150.data.u8[0] = (10000 >> 8);
-    BYD_150.data.u8[1] = (10000 & 0x00FF);
+    //BYD_150.data.u8[0] = (10000 >> 8);
+    //BYD_150.data.u8[1] = (10000 & 0x00FF);
   }
   if (datalayer.battery.status.max_discharge_current_dA == 0) {
     //Force to 0% incase battery no longer wants to discharge

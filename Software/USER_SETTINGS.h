@@ -10,6 +10,7 @@
 /* To edit battery specific limits, see also the USER_SETTINGS.cpp file*/
 
 /* Select battery used */
+#define BATRIUM_BMS
 //#define BMW_I3_BATTERY
 //#define BMW_IX_BATTERY
 //#define BMW_PHEV_BATTERY
@@ -54,7 +55,7 @@
 /* Select inverter communication protocol. See Wiki for which to use with your inverter: https://github.com/dalathegreat/Battery-Emulator/wiki */
 //#define AFORE_CAN        //Enable this line to emulate an "Afore battery" over CAN bus
 //#define BYD_CAN          //Enable this line to emulate a "BYD Battery-Box Premium HVS" over CAN Bus
-//#define BYD_CAN_DEYE     //Enable this line to emulate a "BYD Battery-Box Premium HVS" over CAN Bus, with Deye specific fixes
+#define BYD_CAN_DEYE     //Enable this line to emulate a "BYD Battery-Box Premium HVS" over CAN Bus, with Deye specific fixes
 //#define BYD_KOSTAL_RS485 //Enable this line to emulate a "BYD 11kWh HVM battery" over Kostal RS485
 //#define BYD_MODBUS       //Enable this line to emulate a "BYD 11kWh HVM battery" over Modbus RTU
 //#define FERROAMP_CAN     //Enable this line to emulate a "Pylon 4x96V Force H2" over CAN Bus
@@ -74,7 +75,7 @@
 //#define SUNGROW_CAN      //Enable this line to emulate a "Sungrow SBR064" over CAN bus
 
 /* Select hardware used for Battery-Emulator */
-//#define HW_LILYGO
+#define HW_LILYGO
 //#define HW_STARK
 //#define HW_3LB
 //#define HW_DEVKIT
@@ -88,7 +89,7 @@
 //#define PERIODIC_BMS_RESET    //Enable to have the emulator powercycle the connected battery every 24hours via GPIO. Useful for some batteries like Nissan LEAF
 //#define REMOTE_BMS_RESET      //Enable to allow the emulator to remotely trigger a powercycle of the battery via MQTT. Useful for some batteries like Nissan LEAF
 // PERIODIC_BMS_RESET_AT Uses NTP server, internet required. In 24 Hour format WITHOUT leading 0. e.g 0230 should be 230. Time Zone is set in USER_SETTINGS.cpp
-//#define PERIODIC_BMS_RESET_AT 525
+//#define PERIODIC_BMS_RESET_AT 300
 
 /* Shunt/Contactor settings (Optional) */
 //#define BMW_SBOX  // SBOX relay control & battery current/voltage measurement
@@ -145,10 +146,10 @@
 #define HA_AUTODISCOVERY  // Enable this line to send Home Assistant autodiscovery messages. If not enabled manual configuration of Home Assitant is required
 
 /* Battery settings */
-// Predefined total energy capacity of the battery in Watt-hours (updates automatically from battery data when available)
-#define BATTERY_WH_MAX 30000
+// Predefined total energy capacity of the battery in Watt-hours
+#define BATTERY_WH_MAX 78080
 // Increases battery life. If true will rescale SOC between the configured min/max-percentage
-#define BATTERY_USE_SCALED_SOC true
+#define BATTERY_USE_SCALED_SOC false
 // 8000 = 80.0% , Max percentage the battery will charge to (Inverter gets 100% when reached)
 #define BATTERY_MAXPERCENTAGE 8000
 // 2000 = 20.0% , Min percentage the battery will discharge to (Inverter gets 0% when reached)
@@ -156,19 +157,19 @@
 // 500 = 50.0 °C , Max temperature (Will produce a battery overheat event if above)
 #define BATTERY_MAXTEMPERATURE 500
 // -250 = -25.0 °C , Min temperature (Will produce a battery frozen event if below)
-#define BATTERY_MINTEMPERATURE -250
+#define BATTERY_MINTEMPERATURE 0
 // 150 = 15.0 °C , Max difference between min and max temperature (Will produce a battery temperature deviation event if greater)
 #define BATTERY_MAX_TEMPERATURE_DEVIATION 150
 // 300 = 30.0A , Max charge in Amp (Some inverters needs to be limited)
-#define BATTERY_MAX_CHARGE_AMP 300
+#define BATTERY_MAX_CHARGE_AMP 100
 // 300 = 30.0A , Max discharge in Amp (Some inverters needs to be limited)
-#define BATTERY_MAX_DISCHARGE_AMP 300
+#define BATTERY_MAX_DISCHARGE_AMP 100
 // Enable this to manually set voltage limits on how much battery can be discharged/charged. Normally not used.
-#define BATTERY_USE_VOLTAGE_LIMITS false
+#define BATTERY_USE_VOLTAGE_LIMITS true
 // 5000 = 500.0V , Target charge voltage (Value can be tuned on the fly via webserver). Not used unless BATTERY_USE_VOLTAGE_LIMITS = true
-#define BATTERY_MAX_CHARGE_VOLTAGE 5000
+#define BATTERY_MAX_CHARGE_VOLTAGE 2790
 // 3000 = 300.0V, Target discharge voltage (Value can be tuned on the fly via webserver). Not used unless BATTERY_USE_VOLTAGE_LIMITS = true
-#define BATTERY_MAX_DISCHARGE_VOLTAGE 3000
+#define BATTERY_MAX_DISCHARGE_VOLTAGE 2500
 
 /* LED settings. Optional customization for how the blinking pattern on the LED should behave.
 * CLASSIC   - Slow up/down ramp. If CLASSIC, then a ramp up and ramp down will finish in LED_PERIOD_MS milliseconds
